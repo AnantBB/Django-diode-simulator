@@ -1,0 +1,82 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.pageLayout {
+  display: grid;
+  grid-template-columns: 3fr 1fr; /* left quadrants wide, right column narrow */
+  height: 100vh;
+  gap: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.quadrants {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+}
+
+.quadrant {
+  border: 1px solid #999;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  color: #555;  
+}
+
+.paramTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.paramTable td {
+  padding: 4px;
+  height: 30px;
+  border-bottom: 1px solid #ddd;
+}
+
+.paramTable .label {
+  text-align: left;
+  font-weight: bold;
+  width: 25%;
+}
+
+.paramTable input {
+  width: 180px;
+  height: 25px; 
+  border: none; 
+  box-sizing: border-box;
+}
+
+.paramTable .unit {
+  text-align: right;
+  color: #555;
+  width: 20%;
+}
+
+#activeVar {
+  font-weight: bold;
+  color: #222;
+}
+
+
+
+.formulaTable {
+  width: 100%;  
+  border-collapse: collapse;
+}
+
+.formulaTable td {
+  border: 1px solid #999; /* thin internal borders */
+  padding: 18px;  
+  text-align: center;
+  vertical-align: middle;
+  font-size: 12px;
+}
+
+mjx-container { 
+    margin: 0 !important; /* remove MathJax’s default margins */ 
+}

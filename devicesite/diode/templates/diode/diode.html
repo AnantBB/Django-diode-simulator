@@ -1,0 +1,289 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Diode Simulator Layout</title>
+    <script src="{% static 'diode/script.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{% static 'diode/style.css' %}">    
+</head>
+<body>
+    <div class="pageLayout">
+        <!-- Left: 4 quadrants -->
+        <div class="quadrants">
+            <!-- Quadrant 1: Device schematic -->
+                <div class="quadrant" id="deviceView">
+                    <!-- Legend block -->
+                    <svg id="legendBox" width="180" height="90">
+                        <rect x="0" y="0" width="180" height="90" fill="white" stroke="black" stroke-width="1" />
+                
+                        <rect x="10" y="15" width="12" height="12" fill="pink" />
+                        <text x="30" y="25" font-size="11" fill="black">P-side (Na)</text>
+                
+                        <rect x="10" y="35" width="12" height="12" fill="#d9d9d9" />
+                        <text x="30" y="45" font-size="11" fill="black">P-depletion</text>
+                
+                        <rect x="10" y="55" width="12" height="12" fill="#b0b0b0" />
+                        <text x="30" y="65" font-size="11" fill="black">N-depletion</text>
+                
+                        <rect x="10" y="75" width="12" height="12" fill="lightblue" />
+                        <text x="30" y="85" font-size="11" fill="black">N-side (Nd)</text>
+                
+                        <rect x="10" y="95" width="12" height="4" fill="yellow" />
+                        <text x="30" y="100" font-size="11" fill="black">Junction</text>
+                    </svg>
+                
+                    <!-- Device schematic block -->
+                    <svg id="diodeSchematic" width="500" height="120" style="margin-left:20px;">
+                        <rect id="pRegion" x="0" y="40" width="120" height="60" fill="pink" />
+                        <rect id="pDepletion" x="120" y="40" width="60" height="60" fill="#d9d9d9" />
+                        <rect id="nDepletion" x="180" y="40" width="60" height="60" fill="#b0b0b0" />
+                        <rect id="nRegion" x="240" y="40" width="210" height="60" fill="lightblue" />
+                
+                        <!-- Junction line -->
+                        <line x1="180" y1="40" x2="180" y2="100" stroke="yellow" stroke-width="4" />
+                    </svg>
+                </div>
+            
+            <!-- Quadrant 2: Formula grid -->
+            <div  id="formulaGrid">
+                <table class="formulaTable">
+                    <tr>
+                        <td>
+                            \[ V_{bi} = V_t \cdot \ln \left( \frac{N_a \cdot N_d}{n_i^2} \right) \]
+                        </td>
+                        <td>
+                            \[ W = \sqrt{ \frac{2 \cdot \varepsilon_s \cdot (V_{bi} + V_{app})}{q} \cdot \left( \frac{N_a +
+                            N_d}{N_a \cdot
+                            N_d} \right) } \]
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            \[ W_n = W \cdot \frac{N_a}{N_a + N_d} \]
+                        </td>
+                        <td>
+                            \[ W_p = W \cdot \frac{N_d}{N_a + N_d} \]
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            \[ I_d = I_s \cdot \left( e^{\frac{V}{n \cdot V_t}} - 1 \right) \]
+                        </td>
+                        <td>
+                            \[ V_{terminal} = V - I_d \cdot R_s \]
+                        </td>
+                    </tr>
+                    <tr>                                            
+                        <td>
+                            \[ I_{leak} = I_s \cdot \left( e^{\frac{V}{n \cdot V_t}} - 1 \right) \]
+                        </td>
+                        <td id="statusCell">
+                            —
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <!-- Quadrant 3: Forward bias plot -->
+            <div class="quadrant" id="forwardBias">
+                <canvas id="forwardBiasPlot"></canvas>
+            </div>    
+            <!-- Quadrant 4: Reverse bias plot -->
+            <div class="quadrant" id="reverseBias">
+                <canvas id="reverseBiasPlot"></canvas>
+            </div>
+        </div>    
+        <!-- Right: Parameter list -->
+        <div class="parameters">            
+            <table class="paramTable">
+                <tr>
+                    <td class="label">Device</td>
+                    <td>
+                        <select id="deviceSelect" style="width: 180px;height: 25px;"> 
+                            <option value="1N4148" {% if diode == "1N4148" %}selected{% endif %}>1N4148</option> 
+                            <option value="power" {% if diode == "power" %}selected{% endif %}>Power Diode</option> 
+                            <option value="led" {% if diode == "led" %}selected{% endif %}>LED</option> 
+                        </select>                        
+                    </td>
+                    <td class="unit">Diode</td>
+                </tr>
+                <tr>
+                    <td class="label">N<sub>d</sub></td>
+                    <td><input name="Nd" id="Nd" value="{{Nd}}"></td>
+                    <td class="unit">µm⁻³</td>
+                </tr>
+                <tr>
+                    <td class="label">N<sub>a</sub></td>
+                    <td><input name="Na" id="Na" value="{{Na}}"></td>
+                    <td class="unit">µm⁻³</td>
+                </tr>
+                <tr>
+                    <td class="label">V<sub>t</sub></td>
+                    <td><input name="Vt" id="Vt" value="{{Vt}}"></td>
+                    <td class="unit">mV</td>
+                </tr>
+                <tr>
+                    <td class="label">n<sub>i</sub></td>
+                    <td><input name="ni" id="ni" value="{{ni}}"></td>
+                    <td class="unit">/cm⁻³</td>
+                </tr>
+                <tr>
+                    <td class="label">V<sub>bi</sub></td>
+                    <td><input name="Vbi" id="Vbi" value="{{Vbi}}" readonly></td>
+                    <td class="unit">mV</td>
+                </tr>
+                <tr>
+                    <td class="label">V<sub>app</sub></td>
+                    <td>
+                        <select name="Vapp" id="Vapp">
+                            <!-- Options will be populated dynamically by JS -->
+                        </select>
+                    </td>
+                    <td class="unit">V</td>
+
+                </tr>
+                <tr>
+                    <td class="label">W<sub>n</sub></td>
+                    <td><input name="Wn" id="Wn" value="{{Wn}}" readonly></td>
+                    <td class="unit">× a</td>
+                </tr>
+                <tr>
+                    <td class="label">W<sub>p</sub></td>
+                    <td><input name="Wp" id="Wp" value="{{Wp}}" readonly></td>
+                    <td class="unit">× a</td>
+                </tr>
+                <tr>
+                    <td class="label">I<sub>s</sub></td>
+                    <td><input name="Is" id="Is" value="{{Is}}"></td>
+                    <td class="unit">A</td>
+                </tr>
+                <tr>
+                    <td class="label">I<sub>d</sub></td>
+                    <td><input name="Id" id="Id" value="{{Id}}" readonly></td>
+                    <td class="unit">A</td>
+                </tr>
+                <tr>
+                    <td class="label">R<sub>s</sub></td>
+                    <td><input name="Rs" id="Rs" value="{{Rs}}"></td>
+                    <td class="unit">Ω</td>
+                </tr>
+                <tr>
+                    <td class="label">V<sub>term</sub></td>
+                    <td><input name="Vterm" id="Vterm" value="{{Vterm}}" readonly></td>
+                    <td class="unit">V</td>
+                </tr>
+                <tr>
+                    <td class="label">I<sub>leak</sub></td>
+                    <td><input name="Ileak" id="Ileak" value="{{Ileak}}" readonly></td>
+                    <td class="unit">A</td>
+                </tr>
+            </table>                        
+        </div>
+    </div>    
+</body>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const controlMessages = {
+        Na: "Acceptor concentration (Na). <br>Defines p-side doping level.",
+        Nd: "Donor concentration (Nd). <br>Defines n-side doping level.",
+        ni: "Intrinsic carrier density (ni). <br>Governs built-in potential.",
+        Vbi: "Built-in potential (Vbi). <br>Determined by doping and ni.",
+        Wn: "Depletion width on n-side. <br>Shrinks with higher forward bias.",
+        Wp: "Depletion width on p-side. <br>Shrinks with higher forward bias.",
+        Is: "Saturation current (Is). <br>Sets scale of diode conduction.",
+        Rs: "Series resistance (Rs). <br>Causes voltage drop at high current.",
+        Id: "Diode current (Id). <br>Forward conduction increases exponentially.",
+        Ileak: "Leakage current (Ileak). <br>Reverse bias leakage at Vapp=0.",
+        Vapp: "Applied voltage (Vapp). <br>Use arrow keys to sweep operating point."
+    };
+
+    // Loop through all keys in controlMessages
+    Object.keys(controlMessages).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("focus", () => {
+                const statusCell = document.getElementById("statusCell");
+                if (statusCell) {
+                    statusCell.innerHTML = controlMessages[id];
+                }
+            });
+        }
+    });
+    // Example: generate forward bias data
+    function generateForwardData(Is, Vt) {
+        const data = [];
+        for (let V = 0; V <= 1; V += 0.05) {
+            const Id = Is * (Math.exp(V / Vt) - 1);
+            data.push({x: V, y: Id});
+        }
+        return data;
+    }
+
+    // Example: generate reverse bias data
+    function generateReverseData(Is, Vt) {
+        const data = [];
+        for (let V = -1; V <= 0; V += 0.05) {
+            const Id = Is * (Math.exp(V / Vt) - 1);
+            data.push({x: V, y: Id});
+        }
+        return data;
+    }
+
+    // Plot forward bias
+    function plotForward(data) {
+        new Chart(document.getElementById("forwardBiasPlot"), {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Forward Bias I-V',
+                    data: data,
+                    borderColor: 'red',
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: 'Voltage (V)' } },
+                    y: { title: { display: true, text: 'Current (A)' } }
+                }
+            }
+        });
+    }
+
+    // Plot reverse bias
+    function plotReverse(data) {
+        new Chart(document.getElementById("reverseBiasPlot"), {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Reverse Bias I-V',
+                    data: data,
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: 'Voltage (V)' } },
+                    y: { title: { display: true, text: 'Current (A)' } }
+                }
+            }
+        });
+    }
+
+    // Example parameters (replace with backend values)
+    const Is = 1e-11;   // saturation current
+    const Vt = 0.025;   // thermal voltage
+
+    plotForward(generateForwardData(Is, Vt));
+    plotReverse(generateReverseData(Is, Vt));
+    function updateDepletion(Wn, Wp) {
+        const depletion = document.getElementById("depletion");
+        depletion.setAttribute("x", 100 - Wn);
+        depletion.setAttribute("width", Wn + Wp);
+    }
+});
+</script>
+</html>
